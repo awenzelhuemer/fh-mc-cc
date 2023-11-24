@@ -130,6 +130,10 @@ The order of the processes changes but the order of the transmission works stays
 <<<
 == Counting Even Numbers
 
+=== Solution Approach
+
+Process 0 reads the data (Numbers and Size) and the other processes receive it and calculate the event number amount. After that they send the value to the process zero which calculates the sum and prints it after it receiving all even counts. Receiving and sending is blocking itself that's why in our case no barrier has to be used.
+
 === Source Code
 
 .count_even_numbers.c
@@ -145,34 +149,22 @@ include::{src}/count_even_numbers.c[]
 Info: oversubscribe was needed at least for my wsl instance
 
 ----
-P3: Amount of even numbers is 4
-P5: Amount of even numbers is 4
-P9: Amount of even numbers is 3
-P2: Amount of even numbers is 3
-P8: Amount of even numbers is 2
-P4: Amount of even numbers is 5
-P6: Amount of even numbers is 4
-P7: Amount of even numbers is 2
-P1: Amount of even numbers is 4
-P0: Total even count is 34
-----
-
-----
-P2: Amount of even numbers is 3
-P3: Amount of even numbers is 4
-P4: Amount of even numbers is 5
-P6: Amount of even numbers is 4
-P9: Amount of even numbers is 3
-P5: Amount of even numbers is 4
-P7: Amount of even numbers is 2
-P8: Amount of even numbers is 2
-P1: Amount of even numbers is 4
+P2: Amount of even numbers is 3/3
+P1: Amount of even numbers is 4/8
+P4: Amount of even numbers is 5/5
+P5: Amount of even numbers is 4/6
+P3: Amount of even numbers is 4/8
+P6: Amount of even numbers is 4/7
+P0: Amount of even numbers is 3/7
+P7: Amount of even numbers is 2/4
+P8: Amount of even numbers is 2/4
+P9: Amount of even numbers is 3/8
 P0: Total even count is 34
 ----
 
 === Is the synchronization after counting the numbers necessary, or not? Explain your answer.
 
-Syncronisation is needed because the processes run in parallel and the one process could pass the count before the amount of even numbers has been calculated.
+Syncronisation is in our case is not needed after counting because sending and receiving is blocking. That's why MPI_Barrier(MPI_COMM_WORLD) is not necessary in this case.
 
 === Is there another (better?) way to distribute the array among processes? Explain your answer.
 
