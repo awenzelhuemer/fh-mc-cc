@@ -1,0 +1,180 @@
+= Lab 1 MPI
+:author: Andreas Wenzelhuemer
+:email: <s2210455024@fhooe.at>
+:reproducible:
+:experimental:
+:listing-caption: Listing
+:source-highlighter: rouge
+:src: ./src
+:img: ./img
+:toc:
+:numbered:
+:toclevels: 5
+:rouge-style: github
+
+<<<
+
+== Ring Around the Rosie
+
+=== Solution Approach
+
+First it gets checked if the program is run with at least two processes. Process 0 initializes the token to -1 and doesn't receive a value. The last process sends the token back to 0 which receives the token and the ring gets closed. Each time the token gets sent or received a log message gets printed.
+
+=== Source Code
+
+.ring_around_the_rosie.c
+[source,c]
+----
+include::{src}/ring_around_the_rosie.c[]
+----
+
+=== Result: What is the output of the program? Submit the output as part of your protocol.
+
+==== Compile and Run
+`mpicc ring_around_the_rosie.c -o ring_around_the_rosie`
+
+`mpirun -n 5 ring_around_the_rosie`
+
+----
+Current Process 1!
+[DEBUG]: P1 - Receiving
+Current Process 3!
+[DEBUG]: P3 - Receiving
+Current Process 4!
+[DEBUG]: P4 - Receiving
+Current Process 0!
+Current Process 2!
+[DEBUG]: P2 - Receiving
+[DEBUG]: P0 - Sending token
+[DEBUG]: P0 - Sending done.
+[DEBUG]: P1 - Received token -1 from P0
+[DEBUG]: P1 - Sending token
+[DEBUG]: P1 - Sending done.
+[DEBUG]: P2 - Received token -1 from P1
+[DEBUG]: P2 - Sending token
+[DEBUG]: P3 - Received token -1 from P2
+[DEBUG]: P3 - Sending token
+[DEBUG]: P2 - Sending done.
+[DEBUG]: P4 - Received token -1 from P3
+[DEBUG]: P4 - Sending token
+[DEBUG]: P4 - Sending done.
+[DEBUG]: P3 - Sending done.
+[DEBUG]: P0 - Received token -1 from P4
+Ring closed
+----
+
+=== Run the program multiple times: Does the message order change?
+
+Yes the order does indeed change because processes are executed in parallel and you don't know which one gets executed first.
+
+----
+Current Process 2!
+Current Process 1!
+[DEBUG]: P1 - Receiving
+Current Process 3!
+[DEBUG]: P3 - Receiving
+Current Process 4!
+[DEBUG]: P4 - Receiving
+[DEBUG]: P1 - Received token -1 from P0
+[DEBUG]: P1 - Sending token
+[DEBUG]: P1 - Sending done.
+Current Process 0!
+[DEBUG]: P0 - Sending token
+[DEBUG]: P0 - Sending done.
+[DEBUG]: P2 - Receiving
+[DEBUG]: P2 - Received token -1 from P1
+[DEBUG]: P2 - Sending token
+[DEBUG]: P4 - Received token -1 from P3
+[DEBUG]: P4 - Sending token
+[DEBUG]: P4 - Sending done.
+[DEBUG]: P3 - Received token -1 from P2
+[DEBUG]: P3 - Sending token
+[DEBUG]: P3 - Sending done.
+[DEBUG]: P2 - Sending done.
+[DEBUG]: P0 - Received token -1 from P4
+Ring closed
+----
+
+----
+Current Process 0!
+[DEBUG]: P0 - Sending token
+[DEBUG]: P0 - Sending done.
+Current Process 2!
+[DEBUG]: P2 - Receiving
+Current Process 4!
+[DEBUG]: P4 - Receiving
+[DEBUG]: P2 - Received token -1 from P1
+[DEBUG]: P2 - Sending token
+[DEBUG]: P2 - Sending done.
+Current Process 1!
+[DEBUG]: P1 - Receiving
+[DEBUG]: P1 - Received token -1 from P0
+[DEBUG]: P1 - Sending token
+[DEBUG]: P1 - Sending done.
+Current Process 3!
+[DEBUG]: P3 - Receiving
+[DEBUG]: P3 - Received token -1 from P2
+[DEBUG]: P3 - Sending token
+[DEBUG]: P3 - Sending done.
+[DEBUG]: P4 - Received token -1 from P3
+[DEBUG]: P4 - Sending token
+[DEBUG]: P4 - Sending done.
+[DEBUG]: P0 - Received token -1 from P4
+Ring closed
+----
+
+=== Explain the message order, and why it changes/does not change.
+
+The order of the processes changes but the order of the transmission works stays the same. The order of sending and receving stays the same because the calls are blocking.
+
+<<<
+== Counting Even Numbers
+
+=== Source Code
+
+.count_even_numbers.c
+[source,c]
+----
+include::{src}/count_even_numbers.c[]
+----
+
+=== Result: Run the program with 10 processes (or rather, one process per line)
+
+`mpirun -n 10 --oversubscribe count_even_numbers`
+
+Info: oversubscribe was needed at least for my wsl instance
+
+----
+P3: Amount of even numbers is 4
+P5: Amount of even numbers is 4
+P9: Amount of even numbers is 3
+P2: Amount of even numbers is 3
+P8: Amount of even numbers is 2
+P4: Amount of even numbers is 5
+P6: Amount of even numbers is 4
+P7: Amount of even numbers is 2
+P1: Amount of even numbers is 4
+P0: Total even count is 34
+----
+
+----
+P2: Amount of even numbers is 3
+P3: Amount of even numbers is 4
+P4: Amount of even numbers is 5
+P6: Amount of even numbers is 4
+P9: Amount of even numbers is 3
+P5: Amount of even numbers is 4
+P7: Amount of even numbers is 2
+P8: Amount of even numbers is 2
+P1: Amount of even numbers is 4
+P0: Total even count is 34
+----
+
+=== Is the synchronization after counting the numbers necessary, or not? Explain your answer.
+
+Syncronisation is needed because the processes run in parallel and the one process could pass the count before the amount of even numbers has been calculated.
+
+=== Is there another (better?) way to distribute the array among processes? Explain your answer.
+
+Yes there would be a better way with the MPI_Scatterv function.
+With the function a differing count of the data could be transmitted to each process.
