@@ -164,21 +164,8 @@ P0: Total even count is 34
 
 === Is the synchronization after counting the numbers necessary, or not? Explain your answer.
 
-Syncronisation is only needed for all print statements to appear in order. But for the total event count calculation the barrier is not necessary and could be removed.
-
-----
-P1: Amount of even numbers is 4/8
-P2: Amount of even numbers is 3/3
-P4: Amount of even numbers is 5/5
-P3: Amount of even numbers is 4/8
-P7: Amount of even numbers is 2/4
-P0: Amount of even numbers is 3/7
-P5: Amount of even numbers is 4/6
-P9: Amount of even numbers is 3/8
-P6: Amount of even numbers is 4/7
-P0: Total even count is 34
-P8: Amount of even numbers is 2/4
-----
+Syncronisation is not necessary for our programm because sending and receiving are blocking itself.
+In our case we using for ring around rosie a different tag number otherwise it could lead to problems because the receiving of a ring around rosie process is faster than the calculation.
 
 === Is there another (better?) way to distribute the array among processes? Explain your answer.
 
