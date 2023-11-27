@@ -165,7 +165,8 @@ P0: Total even count is 34
 === Is the synchronization after counting the numbers necessary, or not? Explain your answer.
 
 Syncronisation is not necessary for our programm because sending and receiving are blocking itself.
-In our case we using for ring around rosie a different tag number otherwise it could lead to problems because the receiving of a ring around rosie process is faster than the calculation.
+In our case we using for ring around rosie a different tag otherwise it could lead to problems because the receiving of a ring around rosie process is faster than the calculation.
+This could then be solved with `MPI_Barrier(MPI_COMM_WORLD)`.
 
 === Is there another (better?) way to distribute the array among processes? Explain your answer.
 

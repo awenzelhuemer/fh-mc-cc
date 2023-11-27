@@ -93,8 +93,9 @@ int main(int argc, char** argv) {
         free(data);
     }
 
-    MPI_Barrier(MPI_COMM_WORLD);
+    // MPI_Barrier(MPI_COMM_WORLD);
 
+    // ring around rosie
     int token;
     if (world_rank == 0) {
         token = even_count;
