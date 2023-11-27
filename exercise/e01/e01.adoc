@@ -132,7 +132,7 @@ The order of the processes changes but the order of the transmission works stays
 
 === Solution Approach
 
-Process 0 reads the data (Numbers and Size) and the other processes receive it and calculate the event number amount. After that they send the value to the process zero which calculates the sum and prints it after it receiving all even counts. Receiving and sending is blocking itself that's why in our case no barrier has to be used.
+Process 0 reads the data (Numbers and Size) and the other processes receive it and calculate the event number amount. After that they send the value to the process zero which calculates the sum and prints it after it receiving all even counts.
 
 === Source Code
 
@@ -164,7 +164,21 @@ P0: Total even count is 34
 
 === Is the synchronization after counting the numbers necessary, or not? Explain your answer.
 
-Syncronisation is in our case is not needed after counting because sending and receiving is blocking. That's why MPI_Barrier(MPI_COMM_WORLD) is not necessary in this case.
+Syncronisation is only needed for all print statements to appear in order. But for the total event count calculation the barrier is not necessary and could be removed.
+
+----
+P1: Amount of even numbers is 4/8
+P2: Amount of even numbers is 3/3
+P4: Amount of even numbers is 5/5
+P3: Amount of even numbers is 4/8
+P7: Amount of even numbers is 2/4
+P0: Amount of even numbers is 3/7
+P5: Amount of even numbers is 4/6
+P9: Amount of even numbers is 3/8
+P6: Amount of even numbers is 4/7
+P0: Total even count is 34
+P8: Amount of even numbers is 2/4
+----
 
 === Is there another (better?) way to distribute the array among processes? Explain your answer.
 

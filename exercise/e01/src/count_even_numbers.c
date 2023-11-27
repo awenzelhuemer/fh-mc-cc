@@ -52,7 +52,7 @@ int countEvenNumbers(int* arrOfNumbers, int arrSize) {
 int main(int argc, char** argv) {
   const int FILE_LINES = 10;
 
-    int evenCount = 0;
+    int even_count = 0;
 
     MPI_Init(NULL, NULL);
 
@@ -73,37 +73,39 @@ int main(int argc, char** argv) {
         readData("input.txt", FILE_LINES, numbers, lines);
 
         for (int i = 1; i < world_size; i++) {
-            MPI_Send(&lines[i], 1, MPI_INT, i, 0, MPI_COMM_WORLD);
-            MPI_Send(numbers[i], lines[i], MPI_INT, i, 1, MPI_COMM_WORLD);
+            MPI_Send(numbers[i], lines[i], MPI_INT, i, 0, MPI_COMM_WORLD);
         }
     } else {
-        MPI_Recv(&lines[world_rank], 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        int* data = (int*)malloc(sizeof(int) * lines[world_rank]);
+        int number_size;
+        MPI_Status status;
+        MPI_Probe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
+        MPI_Get_count(&status, MPI_INT, &number_size);
 
-        MPI_Recv(data, lines[world_rank], MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        int* data = (int*)malloc(sizeof(int) * number_size);
 
-        evenCount = countEvenNumbers(data, lines[world_rank]);
+        MPI_Recv(data, number_size, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
 
-        printf("P%d: Amount of even numbers is %d/%d\n", world_rank, evenCount, lines[world_rank]);
+        even_count = countEvenNumbers(data, number_size);
+
+        printf("P%d: Amount of even numbers is %d/%d\n", world_rank, even_count, number_size);
 
         free(data);
     }
 
-    // MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
 
-    int totalEvenCount = 0;
+    int total_even_count = 0;
 
     if (world_rank == 0) {
-        totalEvenCount = countEvenNumbers(numbers[world_rank], lines[world_rank]);
-        printf("P%d: Amount of even numbers is %d/%d\n", world_rank, totalEvenCount, lines[world_rank]);
+        total_even_count = countEvenNumbers(numbers[world_rank], lines[world_rank]);
+        printf("P%d: Amount of even numbers is %d/%d\n", world_rank, total_even_count, lines[world_rank]);
         for (int i = 1; i < world_size; i++) {
-            MPI_Recv(&evenCount, 1, MPI_INT, i, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            totalEvenCount += evenCount;
+            MPI_Recv(&even_count, 1, MPI_INT, i, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            total_even_count += even_count;
         }
-
-        printf("P%d: Total even count is %d\n", world_rank, totalEvenCount);
+        printf("P%d: Total even count is %d\n", world_rank, total_even_count);
     } else {
-        MPI_Send(&evenCount, 1, MPI_INT, 0, 2, MPI_COMM_WORLD);
+        MPI_Send(&even_count, 1, MPI_INT, 0, 2, MPI_COMM_WORLD);
     }
 
     MPI_Finalize();
