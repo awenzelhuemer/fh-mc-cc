@@ -1,0 +1,9 @@
+runtime: java17
+env: standard
+service: greeting-service
+instance_class: B1
+manual_scaling:
+  instances: 2
+handlers:
+ - url: /.*
+   script: this field is required, but ignored

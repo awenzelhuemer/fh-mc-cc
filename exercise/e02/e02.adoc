@@ -1,0 +1,440 @@
+= Lab 2 GCP AppEngine
+:author: Andreas Wenzelhuemer
+:email: <s2210455024@fhooe.at>
+:reproducible:
+:experimental:
+:listing-caption: Listing
+:source-highlighter: rouge
+:src: ./src
+:img: ./img
+:toc:
+:numbered:
+:toclevels: 5
+:rouge-style: github
+
+<<<
+== GCP CLI
+
+Installed via following command for windows:
+
+[source,shell]
+----
+(New-Object Net.WebClient).DownloadFile("https://dl.google.com/dl/cloudsdk/channels/rapid/GoogleCloudSDKInstaller.exe", "$env:Temp\GoogleCloudSDKInstaller.exe")
+
+& $env:Temp\GoogleCloudSDKInstaller.exe
+----
+
+Init project with `gcloud init`
+
+.Initializing the project
+image::{img}/1_cli/initgcloud.png[]
+
+<<<
+== "Hello World" App
+
+Deploy app with `gcloud app deploy`.
+
+.Deploy to gcloud project
+image::{img}/2_hello/deployapp.png[]
+
+.Upload files to server and update service
+image::{img}/2_hello/deployapp2.png[]
+
+.Running service
+image::{img}/2_hello/helloworldrunning.png[]
+
+<<<
+== Create REST Webservice
+
+=== Create rest web service
+
+.Greeting.java
+[source,java]
+----
+package com.example.appengine.lab2;
+
+public class Greeting {
+    private final long id;
+    private final String name;
+
+    public Greeting(long id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+}
+----
+
+.GreetingController.java
+[source,java]
+----
+package com.example.appengine.lab2;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class GreetingController {
+    private int count = 0;
+
+    @GetMapping("/greeting")
+    public Greeting getGreeting(@RequestParam(value = "name", defaultValue = "World") String name) {
+        return new Greeting(count++, "Hello, " + name + "!");
+    }
+}
+
+----
+
+=== Run locally
+
+`mvnw spring-boot:run`
+
+image::{img}/3_rest/spring-boot-run.png[]
+
+image::{img}/3_rest/local_first.png[]
+
+image::{img}/3_rest/local_second.png[]
+
+=== Run in the google cloud
+
+.app.yaml
+[source,yml]
+----
+runtime: java17
+env: standard
+service: greeting-service
+handlers:
+  - url: /.*
+    script: this field is required, but ignored
+----
+
+image::{img}/3_rest/deployapp.png[]
+
+*Do you see any potential issues with the function and the returned content?*  
+
+After redeploying the service, the id gets set back to zero. Also when we create multiple instances of the app, we don't know which id counter gets increased. Normally each instance should be stateless.
+
+Configure the application to use manual scaling for 2 instances of class B1.
+
+.app.yaml
+[source,yml]
+----
+runtime: java17
+env: standard
+service: greeting-service
+instance_class: B1
+manual_scaling:
+ instances: 2
+handlers:
+ - url: /.*
+   script: this field is required, but ignored
+----
+
+*What happens? Why?*
+The app is now running on two instances. Each instance has its own id counter. So the id counter is not shared between the instances.
+
+The first or second instance gets called and the counter gets increased there. That's why for example for the third call the count again starts at zero because it uses a different instance.
+
+.Multiple calls with 2 instances
+image::{img}/3_rest/trafficsplit.png[]
+
+<<<
+== Datastore
+
+Add new entity to datastore with name and date.
+
+image::{img}/4_datastore/entity.png[]
+
+Add following dependency to the pom.xml.
+
+.pom.xml
+[source,xml]
+----
+<dependency>
+    <groupId>com.google.cloud</groupId>
+    <artifactId>google-cloud-datastore</artifactId>
+</dependency>
+----
+
+Add missing field to greeting class.
+
+.Greeting.java
+[source,java]
+----
+package com.example.appengine.lab2;
+
+import com.google.cloud.Timestamp;
+
+public class Greeting {
+    private final long id;
+    private final String name;
+
+    private final Timestamp time;
+
+    public Greeting(long id, String name, Timestamp time) {
+        this.id = id;
+        this.name = name;
+        this.time = time;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Timestamp getTime() {
+        return time;
+    }
+}
+----
+
+Use datastore in api controller.
+
+[source,java]
+----
+private final Datastore datastore = DatastoreOptions.getDefaultInstance().getService();
+private final KeyFactory keyFactory = datastore.newKeyFactory().setKind("greeting");
+
+@GetMapping("/greeting")
+public Greeting getGreeting(@RequestParam(value = "name", defaultValue = "World") String name) {
+
+    Key key = datastore.allocateId(keyFactory.newKey());
+
+    Greeting greeting = new Greeting(key.getId(), name, Timestamp.now());
+
+    Entity greetingEntity = Entity.newBuilder(key)
+            .set("name", name)
+            .set("time", Timestamp.now())
+            .build();
+    datastore.put(greetingEntity);
+
+    return greeting;
+}
+----
+
+After deploying the app, we can see the new entity in the datastore.
+Id is now set by the datastore and timestamp is set to the current date.
+
+.New Entity
+image::{img}/4_datastore/result.png[]
+
+Entities in database
+
+.Query results
+image::{img}/4_datastore/db.png[]
+
+Query entities with GQL query.
+
+.GQL query
+image::{img}/4_datastore/db.png[]
+
+Retrieve entities with GQL query and return them as json.
+
+.GreetingController.java
+[source,java]
+----
+@GetMapping("/list")
+public List<Greeting> listGreetings() {
+    Query<Entity> q = Query.newGqlQueryBuilder(Query.ResultType.ENTITY, "SELECT * FROM greeting ORDER BY time DESC LIMIT @limit")
+            .setBinding("limit", 10)
+            .build();
+    QueryResults<Entity> results = datastore.run(q);
+    ArrayList<Greeting> greetings = new ArrayList<>(10);
+    while (results.hasNext()) {
+        Entity e = results.next();
+        greetings.add(new Greeting(
+                e.getKey().getId(),
+                e.getString("name"),
+                e.getTimestamp("time")
+        ));
+    }
+    return greetings;
+}
+----
+
+image::{img}/4_datastore/list.png[]
+
+<<<
+== Scheduling Jobs
+
+Create a new .yaml file for the cron job.
+
+.cron.yaml
+[source,yml]
+----
+cron:
+  - description: "cleanup old greeting entries"
+    url: /cleanup
+    schedule: every 2 mins
+    target: greeting-service
+----
+
+Add new endpoint to controller.
+
+.GreetingController.java
+[source,java]
+----
+@GetMapping("/cleanup")
+public ResponseEntity<String> cleanup() {
+    Query<Entity> q = Query.newGqlQueryBuilder(Query.ResultType.ENTITY, "SELECT * FROM greeting order by time asc").build();
+
+    QueryResults<Entity> results = datastore.run(q);
+
+    List<Long> ids = new ArrayList<>();
+
+    while (results.hasNext()) {
+        Entity e = results.next();
+        var id = e.getKey();
+        var timestamp = e.getTimestamp("time");
+
+        if(timestamp.getSeconds() > Timestamp.now().getSeconds() - 300) {
+            break;
+        }
+        datastore.delete(id);
+        ids.add(id.getId());
+    }
+
+    if(ids.size() > 0) {
+        logger.info("Removed greetings with following ids: {}", String.join(", ", ids.stream().map(Object::toString).toList()));
+    }
+    return ResponseEntity.ok().build();
+}
+----
+
+Update pom.xml with following dependency for logging.
+
+.pom.xml
+[source,xml]
+----
+<dependency>
+    <groupId>com.google.cloud</groupId>
+    <artifactId>google-cloud-logging-logback</artifactId>
+</dependency>
+----
+
+Deploy cron job:
+
+`gcloud app deploy .\cron.yaml`
+
+Deploy app:
+`gcloud app deploy`
+
+View cron job:
+
+.Cron Job
+image::{img}/5_cron/successful_job.png[]
+
+.Inserted Data
+image::{img}/5_cron/inserted_data.png[]
+
+Wait until data got deleted and view logs:
+
+.Logs
+image::{img}/5_cron/logs.png[]
+
+.Data
+image::{img}/5_cron/delete.png[]
+
+<<<
+== Pub/Sub
+
+Create new topic with custom schema for validation.
+
+.Topic
+image::{img}/6_pubsub/topic.png[]
+
+.Custom Schema
+image::{img}/6_pubsub/schema.png[]
+
+Add a subscription with the previous created topic and the endpoint url.
+
+.Subscription
+image::{img}/6_pubsub/subscription.png[]
+
+Implement new pub/sub controller.
+
+.PubSubController.java
+[source,java]
+----
+@RestController
+public class PubSubController {
+
+    private final Datastore datastore = DatastoreOptions.getDefaultInstance().getService();
+    private final KeyFactory keyFactory = datastore.newKeyFactory().setKind("message");
+
+    Logger logger = LoggerFactory.getLogger(PubSubController.class);
+
+    @PostMapping("/pubsub/endpoint")
+    public ResponseEntity<String> handlePubSubMessage(@RequestBody String pubSubMessage) {
+         logger.info("Received Pub/Sub message with payload: " + pubSubMessage);
+
+        try {
+            var messageContent = getMessageContent(pubSubMessage);
+            Key key = datastore.allocateId(keyFactory.newKey());
+            Entity entity = Entity.newBuilder(key)
+                    .set("text", messageContent.getText())
+                    .build();
+            datastore.put(entity);
+
+            // Return a success response
+            return ResponseEntity.ok("Message processed successfully");
+        } catch (IOException e) {
+            logger.error("Error parsing JSON: " + pubSubMessage, e);
+            // Handle parsing errors
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing Pub/Sub message");
+        }
+    }
+
+    private MessageContent getMessageContent(String messageContent) throws IOException {
+
+        JsonElement jsonRoot = JsonParser.parseString(messageContent).getAsJsonObject();
+        String messageStr = jsonRoot.getAsJsonObject().get("message").toString();
+
+        var objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
+
+        Message message = objectMapper.readValue(messageStr, Message.class);
+        String decodedMessage = new String(Base64.getDecoder().decode(message.getData()));
+        return objectMapper.readValue(decodedMessage, MessageContent.class);
+    }
+
+    @GetMapping("/pubsub/list")
+    public ResponseEntity<List<MessageContent>> listStoredMessages() {
+        Query<Entity> q = Query.newGqlQueryBuilder(Query.ResultType.ENTITY, "SELECT * FROM message").build();
+
+        QueryResults<Entity> results = datastore.run(q);
+
+        ArrayList<MessageContent> messages = new ArrayList<>();
+
+        while (results.hasNext()) {
+            Entity e = results.next();
+            var id = e.getKey();
+            var message = e.getString("text");
+            messages.add(new MessageContent(id.getId(), message));
+        }
+
+        return ResponseEntity.ok(messages);
+    }
+}
+----
+
+Execution with:
+
+`gcloud pubsub topics publish test --message='{"text":"It works!"}'`
+
+Result:
+
+.Result
+image::{img}/6_pubsub/result.png[]

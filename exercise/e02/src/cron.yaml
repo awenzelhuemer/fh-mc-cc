@@ -1,0 +1,5 @@
+cron:
+  - description: "cleanup old greeting entries"
+    url: /cleanup
+    schedule: every 2 mins
+    target: greeting-service
