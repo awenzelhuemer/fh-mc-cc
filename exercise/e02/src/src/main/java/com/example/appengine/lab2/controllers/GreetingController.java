@@ -1,5 +1,6 @@
-package com.example.appengine.lab2;
+package com.example.appengine.lab2.controllers;
 
+import com.example.appengine.lab2.models.Greeting;
 import com.google.cloud.Timestamp;
 import com.google.cloud.datastore.*;
 import org.slf4j.Logger;
@@ -66,7 +67,7 @@ public class GreetingController {
             var id = e.getKey();
             var timestamp = e.getTimestamp("time");
 
-            if (timestamp.getSeconds() > Timestamp.now().getSeconds() - 300) {
+            if (timestamp.getSeconds() > Timestamp.now().getSeconds() - (60 * 5)) {
                 break;
             }
             datastore.delete(id);

@@ -1,9 +1,8 @@
-package com.example.appengine.lab2;
+package com.example.appengine.lab2.controllers;
 
+import com.example.appengine.lab2.models.MessageContent;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.cloud.datastore.*;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
@@ -32,7 +31,7 @@ public class PubSubController {
          logger.info("Received Pub/Sub message with payload: " + pubSubMessage);
 
         try {
-            var messageContent = getMessageContent(pubSubMessage);
+            var messageContent = getMessageData(pubSubMessage);
 
             logger.info(messageContent.toString());
 
@@ -42,34 +41,24 @@ public class PubSubController {
                     .build();
             datastore.put(entity);
 
-            // Return a success response
             return ResponseEntity.ok("Message processed successfully");
         } catch (IOException e) {
             logger.error("Error parsing JSON: " + pubSubMessage, e);
-            // Handle parsing errors
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing Pub/Sub message");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error processing Pub/Sub message");
         }
     }
 
-    private MessageContent getMessageContent(String messageContent) throws IOException {
-
+    private MessageContent getMessageData(String messageContent) throws IOException {
         JsonElement jsonRoot = JsonParser.parseString(messageContent).getAsJsonObject();
-        String messageStr = jsonRoot.getAsJsonObject().get("message").toString();
-
-        logger.info("Extracted string: " + messageStr);
+        String messageStr = jsonRoot.getAsJsonObject()
+                .get("message")
+                .getAsJsonObject().get("data")
+                .getAsString();
 
         var objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
-
-        Message message = objectMapper.readValue(messageStr, Message.class);
-
-        logger.info("Message: " + message);
-
-        String decodedMessage = new String(Base64.getDecoder().decode(message.getData()));
-
-        logger.info("Decoded Message: " + decodedMessage);
-
+        String decodedMessage = new String(Base64.getDecoder().decode(messageStr));
 
         return objectMapper.readValue(decodedMessage, MessageContent.class);
     }

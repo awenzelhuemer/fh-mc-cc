@@ -1,4 +1,4 @@
-package com.example.appengine.lab2;
+package com.example.appengine.lab2.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
