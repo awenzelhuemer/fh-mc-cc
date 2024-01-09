@@ -1,0 +1,315 @@
+= Lab 3 AWS EC2
+:author: Andreas Wenzelhuemer
+:email: <s2210455024@fhooe.at>
+:reproducible:
+:experimental:
+:listing-caption: Listing
+:source-highlighter: rouge
+:src: ./src
+:img: ./img
+:toc:
+:numbered:
+:toclevels: 5
+:rouge-style: github
+
+<<< 
+== Amazon Web Service Portal
+
+=== Preparations
+
+.Amazon Web Services Portal
+image::./img/2024-01-08T13-08-30-942Z.png[] 
+
+<<<
+=== Launch of an EC2 Instance
+
+.Create new instance
+image::./img/2024-01-08T13-14-59-572Z.png[] 
+
+.Instance launched
+image::./img/2024-01-08T13-15-41-495Z.png[] 
+
+<<<
+=== Security Groups
+
+.Connect to instance
+image::./img/2024-01-08T13-22-45-133Z.png[] 
+
+.SSH connection established
+image::./img/2024-01-08T13-34-23-728Z.png[] 
+
+Install Apache Web Server:
+
+`sudo yum install httpd -y`
+
+Turn on the Server:
+
+.Turn on Server (Don't forget sudo..)
+image::./img/2024-01-08T13-37-29-737Z.png[] 
+
+.Add html page
+image::./img/2024-01-08T13-41-37-396Z.png[] 
+
+.Show html page
+image::./img/2024-01-09T10-45-11-831Z.png[]
+
+
+
+.Add rules for http requests
+image::./img/2024-01-08T14-23-47-369Z.png[] 
+
+After adding rules the web server can be accessed.
+
+.Web page (ChatGPT generated test page)
+image::./img/2024-01-08T13-44-13-314Z.png[] 
+
+<<<
+=== Volumes and Snapshots
+
+Create a new volume and attach it to your instance.
+
+.New volume
+image::./img/2024-01-08T14-30-10-595Z.png[] 
+
+Check type of the volume.
+
+`sudo file -s /dev/xvdf`
+
+.Type
+image::./img/2024-01-08T15-18-58-739Z.png[] 
+
+.Create filesystem and mount
+image::./img/2024-01-08T15-20-24-780Z.png[] 
+
+.Create file on new partition
+image::./img/2024-01-08T15-22-17-343Z.png[] 
+
+.Unmount
+image::./img/2024-01-08T15-25-51-794Z.png[] 
+
+.Create snapshot of volume
+image::./img/2024-01-08T15-27-19-701Z.png[] 
+
+.Volume deleted
+image::./img/2024-01-08T15-29-01-744Z.png[] 
+
+.Create from snapshot
+image::./img/2024-01-08T15-30-15-840Z.png[] 
+
+.Mount and check if file exists
+image::./img/2024-01-08T15-45-04-155Z.png[] 
+
+<<<
+=== Load Balancers
+
+==== Classic Load Balancing
+
+.Create instance with different availability zone
+image::./img/2024-01-08T15-52-29-913Z.png[] 
+
+Create new load balancer and new instance target group for routing.
+
+.Target group with instances
+image::./img/2024-01-08T16-04-28-036Z.png[] 
+
+.Access through load balancer (Instance 1 reached)
+image::./img/2024-01-08T16-10-30-796Z.png[] 
+
+Second instance is missing the http security group that's why its unhealthy.
+
+.Add second security group
+image::./img/2024-01-08T16-12-19-670Z.png[] 
+
+.Both instances are healthy
+image::./img/2024-01-08T16-16-48-236Z.png[] 
+
+The load balancer is now routing to both instances, that's why the website changes from one instance to the other.
+
+==== Path-Based Load Balancing
+
+.Add two target groups i1 and i2
+image::./img/2024-01-08T16-40-59-758Z.png[] 
+
+Add folders i1 and i2 and add html file there.
+
+After that rules for the different paths have to be added.
+
+.Set rules
+image::./img/2024-01-08T16-56-07-134Z.png[] 
+
+.Verify routing (Instance 1)
+image::./img/2024-01-08T16-56-20-140Z.png[] 
+
+.Verify routing (Instance 2)
+image::./img/2024-01-08T16-56-41-046Z.png[] 
+
+.Fallback (Different page from instance 1)
+image::./img/2024-01-08T16-57-15-519Z.png[] 
+
+<<<
+== AWS CLI
+
+=== Configuration
+
+Install the aws shell:
+
+`pip install aws-shell`
+
+image::./img/2024-01-08T17-12-22-660Z.png[] 
+
+Add credentials file from aws portal to ~/.aws/credentials.
+
+Configure aws shell:
+
+.aws-shell configure
+image::./img/2024-01-08T17-35-57-615Z.png[] 
+
+.Test command after credential configuration
+image::./img/2024-01-08T17-34-25-280Z.png[] 
+
+<<<
+=== AWS CLI with EC2
+
+==== Key-Pairs
+
+image::./img/2024-01-08T17-37-01-034Z.png[]
+
+==== Virtual Private Cloud - VPC
+
+.Describe the VPCs
+image::./img/2024-01-08T17-40-44-317Z.png[] 
+
+.Filter by id
+image::./img/2024-01-08T17-50-22-617Z.png[] 
+
+==== Run instance
+
+`aws ec2 run-instances --image-id ami-00b8917ae86a424c9 --instance-type t2.micro --key-name ssh-key --security-group-ids sg-0ad7b90988d94ad76 --subnet-id subnet-0882fd8526c00f350 --tags "Key=Name,Value=i1"`
+
+.Using the aws shell
+image::./img/2024-01-09T07-26-13-012Z.png[] 
+
+.New instance
+image::./img/2024-01-09T07-26-41-807Z.png[] 
+
+==== Querying output
+
+Command for querying all instances by instance id and state:
+
+`aws ec2 describe-instances --query "Reservations[].Instances[].{InstanceId:InstanceId,State:State.Name}"`
+
+.Querying all instances
+image::./img/2024-01-09T07-31-56-515Z.png[] 
+
+<<<
+=== Working with the CLI
+
+==== Instances
+
+Create second instance with different availability zone
+
+`aws ec2 run-instances --image-id ami-00b8917ae86a424c9 --instance-type t2.micro --key-name ssh-key --security-group-ids sg-0ad7b90988d94ad76 --subnet-id subnet-0882fd8526c00f350 --placement AvailabilityZone=us-east-1d`
+
+Querying all instances
+
+`aws ec2 describe-instances --query "Reservations[].Instances[].{InstanceId:InstanceId,State:State.Name}"`
+
+.4 Instances and 1 test instance which got terminated.
+image::./img/2024-01-09T07-53-18-260Z.png[]
+
+==== Security Groups
+
+Create security group
+
+`aws ec2 create-security-group --group-name httpsg --description "HTTP Security Group"`
+
+Allow http traffic from my ip only
+
+`aws ec2 authorize-security-group-ingress --group-name MyHTTPSG --protocol tcp --port 80 --cidr 77.220.105.192/32`
+
+.Create Security Group with inbound rule
+image::./img/2024-01-09T07-59-23-229Z.png[]
+
+Change security groups of the instances:
+
+`aws ec2 modify-instance-attribute --instance-id i-026593dc99ac2c157 --groups sg-0cf54901025d95ced sg-0ad7b90988d94ad76`
+
+`aws ec2 modify-instance-attribute --instance-id i-0f32f2bd79deab496 --groups sg-0cf54901025d95ced sg-0ad7b90988d94ad76`
+
+.Check if access is possible
+image::./img/2024-01-09T08-11-06-252Z.png[]
+
+==== Volumes and Snapshots
+
+Create volume
+
+`aws ec2 create-volume --availability-zone us-east-1d --size 8`
+
+.Created volume
+image:./img/2024-01-09T08-14-38-709Z.png[]
+
+Attach volume to instance
+
+`aws ec2 attach-volume --volume-id vol-0d509bb887609d1c8 --instance-id i-026593dc99ac2c157 --device /dev/sdg`
+
+.Attached volume
+image:./img/2024-01-09T08-19-20-330Z.png[]
+
+Create snapshot
+
+`aws ec2 create-snapshot --volume-id vol-0d509bb887609d1c8 --description "Test snapshot"`
+
+Detach volume
+
+`aws ec2 detach-volume --volume-id vol-0d509bb887609d1c8`
+
+Delete volume
+
+`aws ec2 delete-volume --volume-id vol-0d509bb887609d1c8`
+
+Create volume from snapshot
+
+`aws ec2 create-volume --snapshot-id snap-0007714f04824ed3d --availability-zone us-east-1d`
+
+Check if file exists
+
+.i-was-here still exists
+image:./img/2024-01-09T08-31-50-684Z.png[]
+
+==== Load Balancer
+
+Create load balancer
+
+`aws elbv2 create-load-balancer --name my-load-balancer --subnets subnet-0882fd8526c00f350 subnet-08e8a61e2b32bc655 --security-groups sg-0cf54901025d95ced`
+
+.Created load balancer "my-load-balancer"
+image::./img/2024-01-09T08-44-47-871Z.png[]
+
+Create new target group
+
+`aws elbv2 create-target-group --name MyTargetGroup --protocol HTTP --port 80 --vpc-id vpc-0492abecb5d55223`
+
+Create new listener for load balancer with target group
+
+`aws elbv2 create-listener --load-balancer-arn arn:aws:elasticloadbalancing:us-east-1:677263074526:loadbalancer/app/my-load-balancer/2ebb671774997b74 --protocol HTTP --port 80 --default-actions Type=forward,TargetGroupArn=arn:aws:elasticloadbalancing:us-east-1:677263074526:targetgroup/MyTargetGroup/0d709139aa1c35bb`
+
+Register instances as targets to the  target group
+
+`aws elbv2 register-targets --target-group-arn arn:aws:elasticloadbalancing:us-east-1:677263074526:targetgroup/MyTargetGroup/0d709139aa1c35bb --targets "Id=i-026593dc99ac2c157" "Id=i-0bb2c09b1f9587e15"`
+
+Remove existing security group rule
+
+`aws ec2 revoke-security-group-ingress --group-id sg-0cf54901025d95ced --protocol tcp --port 80 --cidr 77.220.105.192/32`
+
+Add new security group rule
+
+`aws ec2 authorize-security-group-ingress --group-id sg-0cf54901025d95ced --protocol tcp --port 80 --cidr 0.0.0.0/0`
+
+Test load balancer
+
+.Instance 1
+image::./img/2024-01-09T09-15-53-377Z.png[] 
+
+.Instance 2
+image:./img/2024-01-09T09-15-40-235Z.png[] 
+
