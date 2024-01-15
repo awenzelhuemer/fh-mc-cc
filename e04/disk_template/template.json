@@ -1,0 +1,40 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "disks_lab4_name": {
+            "defaultValue": "lab4",
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Compute/disks",
+            "apiVersion": "2023-01-02",
+            "name": "[parameters('disks_lab4_name')]",
+            "location": "centralindia",
+            "sku": {
+                "name": "Premium_LRS",
+                "tier": "Premium"
+            },
+            "properties": {
+                "hyperVGeneration": "V1",
+                "creationData": {
+                    "createOption": "Empty"
+                },
+                "diskSizeGB": 1024,
+                "diskIOPSReadWrite": 5000,
+                "diskMBpsReadWrite": 200,
+                "encryption": {
+                    "type": "EncryptionAtRestWithPlatformKey"
+                },
+                "maxShares": 2,
+                "networkAccessPolicy": "AllowAll",
+                "publicNetworkAccess": "Enabled",
+                "diskState": "Unattached",
+                "tier": "P30"
+            }
+        }
+    ]
+}

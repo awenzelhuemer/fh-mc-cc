@@ -1,0 +1,268 @@
+= Lab 4 Azure
+:author: Andreas Wenzelhuemer
+:email: <s2210455024@fhooe.at>
+:reproducible:
+:experimental:
+:listing-caption: Listing
+:source-highlighter: rouge
+:toc:
+:numbered:
+:toclevels: 5
+:rouge-style: github
+
+<<< 
+== Azure Portal
+
+=== Preparations
+
+.Ressource group for the lab
+image::2024-01-15T09-43-12-571Z.png[] 
+
+.Updated dashboard
+image::2024-01-15T09-28-06-916Z.png[] 
+
+
+AWS vs Azure naming:
+
+- EC2 instances -> Virtual Machines
+- Security Groups -> Network Security Groups
+- Volumes -> Disks
+- Snapshots -> Snapshots
+- Load Balancers -> Load Balancer
+- Target Groups -> Network Security Group Rules
+
+<<<
+== Azure CLI
+
+.Login
+image::2024-01-15T09-33-29-072Z.png[] 
+
+<<<
+== Azure Resource Manager (ARM) Templates
+
+=== Creating an Initial Template
+
+.Initial template
+image::2024-01-15T09-47-16-538Z.png[] 
+
+.Template view of Azure
+image::2024-01-15T09-51-01-032Z.png[] 
+
+=== Analyzing an ARM Template
+
+Parameters: Can be used to customize the deployment of the solution
+
+Variables: Are used to simplify the template, eliminate duplication, and make the template easier to read and maintain.
+
+Resources: Contains an array of objects, each representing a resource that you want to deploy with the template.
+
+Outputs: Defines the values that can be returned from the ARM template after deployment. These outputs can be used to retrieve information about deploy resources, such as the the IP address of a VM.
+
+
+Create a new key with `ssh-keygen -t rsa` and add it to the template.json file.
+
+.Replace public key in template.json
+image::2024-01-15T10-20-52-797Z.png[]
+
+Now in the next step can deploy the template using the azure cli.
+
+=== Creating a VM using the CLI
+
+`az deployment group create -g lab4 --template-file template.json --parameters parameters.json`
+
+Because we added a public key to the template we can now connect to the vm using ssh without using a password or key file.
+
+Connect to the VM using SSH:
+
+`ssh azureuser@20.244.34.101`
+
+.Running vm deployment
+image::2024-01-15T11-36-50-074Z.png[] 
+
+List all vms with name template:
+
+`az vm list --query "[?name=='template']"`
+
+.List VMs
+image::2024-01-15T11-40-14-935Z.png[] 
+
+List all vms with public ips:
+
+`az network public-ip list`
+
+.VMs with public Ips
+image::2024-01-15T11-41-09-973Z.png[] 
+
+Get public ip address:
+
+`az network public-ip show --resource-group lab4 --name template-ip --query ipAddress`
+
+.Public ip address
+image::2024-01-15T11-44-37-094Z.png[] 
+
+<<<
+== Web Server Access
+
+=== Installing the Web Server
+
+Install webserver:
+
+`sudo apt-get install apache2`
+
+.Check installation
+image::2024-01-15T09-59-04-623Z.png[] 
+
+==== Check accessibility
+
+.Accessible
+image::2024-01-15T11-50-58-588Z.png[] 
+
+.Not accessible
+image::2024-01-15T10-00-54-836Z.png[] 
+
+==== Add NSG rule for Web Server
+
+.Network security group name
+image::2024-01-15T11-45-48-385Z.png[] 
+
+List the security groups:
+
+`az network nsg list --query "[?name=='template-nsg']"`
+
+Add an nsg rule to the group to allow tcp access from port 80:
+
+`az network nsg rule create --resource-group lab4 --nsg-name template-nsg --name http-rule --protocol tcp --priority 100 --source-address-prefix '*' --source-port-range '*' --destination-address-prefix '*' --destination-port-range 80`
+
+==== Modifying NSG rules
+
+Remove rule:
+
+`az network nsg rule delete --resource-group lab4 --nsg-name template-nsg --name http-rule`
+
+Allow from own ip only:
+
+`az network nsg rule create --resource-group lab4 --nsg-name template-nsg --name ip-rule --protocol tcp --priority 100 --source-address-prefix '77.220.105.192/32' --source-port-range '*' --destination-address-prefix '*' --destination-port-range 80`
+
+.Works again
+image::2024-01-15T11-55-58-448Z.png[] 
+
+Remove rule:
+
+`az network nsg rule delete --resource-group lab4 --nsg-name template-nsg --name ip-rule`
+
+Allow from subnet:
+
+`az network nsg rule create --resource-group lab4 --nsg-name template-nsg --name subnet-rule --protocol tcp --priority 100 --source-address-prefix '77.220.105.0/32' --source-port-range '*' --destination-address-prefix '*' --destination-port-range 80`
+
+Selecting a port range:
+
+`az network nsg rule create --resource-group lab4 --nsg-name template-nsg --name portrange-rule --protocol tcp --priority 100 --source-address-prefix '*' --source-port-range '*' --destination-address-prefix '*' --destination-port-range 80-443`
+
+<<<
+== Creating more VMs using ARM
+
+.Set password instead of public key
+image::2024-01-15T12-12-58-868Z.png[] 
+
+.Allow password sign in
+image::2024-01-15T12-14-51-955Z.png[] 
+
+All public ip stuff was removed from parameters.json and template.json.
+
+Create the vm using the cli:
+
+`az deployment group create -g lab4 --template-file template.json --parameters parameters.json`
+
+.Running vm deployment
+image::2024-01-15T12-33-56-579Z.png[] 
+
+Query vm:
+
+`az vm list --query "[?name=='template2']"`
+
+.Template2 VM
+image::2024-01-15T12-35-51-395Z.png[] 
+
+
+Query nic list:
+
+`az network nic list --query "[?name=='template804_z2']"`
+
+.Private ip of vm
+image::2024-01-15T12-37-57-472Z.png[] 
+
+Connect to second vm over first vm with ssh:
+
+.Connect to second vm
+image::2024-01-15T12-39-33-860Z.png[] 
+
+<<<
+== Disks
+
+=== Creating the Disk
+
+`az disk create --name lab4 --sku Premium_LRS --size-gb 1024 --max-shares 2 --resource-group lab4 --location centralindia --zone 1`
+
+image::2024-01-15T12-46-52-736Z.png[] 
+
+Create with disk template:
+
+`az deployment group create --ressource-group lab4 --template-file template.json --parameters parameters.json`
+
+=== Attaching the Disk
+
+First shutdown running vms:
+
+`az vm deallocate --name template --resource-group lab4`
+
+`az vm deallocate --name template2 --resource-group lab4`
+
+Attach disk to both vms:
+
+`az vm disk attach --resource-group lab4 --vm-name template --name lab4`
+
+`az vm disk attach --resource-group lab4 --vm-name template2 --name lab4`
+
+.Connect to both disks
+image::2024-01-15T13-07-12-909Z.png[] 
+
+
+Create filesystem on one VM:
+
+.Create filesystem
+image::2024-01-15T13-11-17-224Z.png[] 
+
+.Mount to folder /fileserver
+image::2024-01-15T13-13-01-867Z.png[] 
+
+Create file and unmount disk:
+
+.Create file and unmount
+image::2024-01-15T13-14-26-694Z.png[] 
+
+
+Connect to second vm and mount disk:
+
+.Mount disk and check for file
+image::2024-01-15T13-24-06-128Z.png[] 
+
+// If time add mpi task
+
+// <<<
+// == MPI on Azure
+
+// === Requirements Overview
+
+// === Create Hosts
+
+// === Install MPI
+
+// === Hosts File
+
+// === Authentication
+
+// === NFS
+
+// === Hosts for MPI
+
+// === Testing

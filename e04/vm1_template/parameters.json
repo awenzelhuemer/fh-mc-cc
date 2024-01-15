@@ -1,0 +1,110 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "location": {
+            "value": "centralindia"
+        },
+        "networkInterfaceName1": {
+            "value": "template804_z1"
+        },
+        "networkSecurityGroupName": {
+            "value": "template-nsg"
+        },
+        "networkSecurityGroupRules": {
+            "value": [
+                {
+                    "name": "SSH",
+                    "properties": {
+                        "priority": 300,
+                        "protocol": "TCP",
+                        "access": "Allow",
+                        "direction": "Inbound",
+                        "sourceAddressPrefix": "*",
+                        "sourcePortRange": "*",
+                        "destinationAddressPrefix": "*",
+                        "destinationPortRange": "22"
+                    }
+                }
+            ]
+        },
+        "subnetName": {
+            "value": "default"
+        },
+        "virtualNetworkName": {
+            "value": "template-vnet"
+        },
+        "addressPrefixes": {
+            "value": [
+                "10.0.0.0/16"
+            ]
+        },
+        "subnets": {
+            "value": [
+                {
+                    "name": "default",
+                    "properties": {
+                        "addressPrefix": "10.0.0.0/24"
+                    }
+                }
+            ]
+        },
+        "publicIpAddressName1": {
+            "value": "template-ip"
+        },
+        "publicIpAddressType": {
+            "value": "Static"
+        },
+        "publicIpAddressSku": {
+            "value": "Standard"
+        },
+        "pipDeleteOption": {
+            "value": "Detach"
+        },
+        "virtualMachineName": {
+            "value": "template"
+        },
+        "virtualMachineName1": {
+            "value": "template"
+        },
+        "virtualMachineComputerName1": {
+            "value": "template"
+        },
+        "virtualMachineRG": {
+            "value": "lab4"
+        },
+        "osDiskType": {
+            "value": "Premium_LRS"
+        },
+        "osDiskDeleteOption": {
+            "value": "Delete"
+        },
+        "virtualMachineSize": {
+            "value": "Standard_B1s"
+        },
+        "nicDeleteOption": {
+            "value": "Detach"
+        },
+        "hibernationEnabled": {
+            "value": false
+        },
+        "adminUsername": {
+            "value": "azureuser"
+        },
+        "adminPublicKey": {
+            "value": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCjVA6ogMItcMwSkW7cHleVNgHzChn68vTW0Jo2ngkYzAP8S6+VzcVoQu3TxbO3z3AgcnLOPz36foRu+raOli/Us6rDyu3c1rAYRwiG9M3JxBKc5xaXUkLQnblfX1k4W6B3CYTqOcHlkrS4Gg7J8JeTVXY5XXC3ey8l66emW3F+rNl1yeJcLXg4ZN7G6tV4W9c/2KyVH6qv9zgY9T4AZXdk4PSj7gMmDp5h3tZfGhIvRT/i7NQ4+qBWnfA/kuN0DaPquCgRTcd1aUoPUBri21atp97Vyw45lkD1jKv49JDhNoAtlX6yj7LVYniZCR4IcY+rcBAapM6jJOF3ThCmPGQ/h+hBGDh/W3scozJP42PyY70PZgE9ab0xK8ShZJTKJwxFI87Ab20b9oKkPO2SFpP1yYYn3ynWAwxv//rCKp1asCcTkndFBo7UZnZsTpkMtwBwTeJUsmVRZptx3T/QANSRTCafHMOdY43zEqkGMTWuonlQCTCJmosrKChedg3lTCs= andi@Andi-NB"
+        },
+        "securityType": {
+            "value": "TrustedLaunch"
+        },
+        "secureBoot": {
+            "value": true
+        },
+        "vTPM": {
+            "value": true
+        },
+        "virtualMachine1Zone": {
+            "value": "1"
+        }
+    }
+}

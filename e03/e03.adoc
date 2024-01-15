@@ -30,13 +30,14 @@ image::./img/2024-01-08T13-14-59-572Z.png[]
 image::./img/2024-01-08T13-15-41-495Z.png[] 
 
 <<<
-=== Security Groups
 
-.Connect to instance
+.Connect to instance over ssh
 image::./img/2024-01-08T13-22-45-133Z.png[] 
 
 .SSH connection established
 image::./img/2024-01-08T13-34-23-728Z.png[] 
+
+=== Security Groups
 
 Install Apache Web Server:
 
@@ -47,13 +48,10 @@ Turn on the Server:
 .Turn on Server (Don't forget sudo..)
 image::./img/2024-01-08T13-37-29-737Z.png[] 
 
-.Add html page
-image::./img/2024-01-08T13-41-37-396Z.png[] 
+Add html and try to access it.
 
 .Show html page
 image::./img/2024-01-09T10-45-11-831Z.png[]
-
-
 
 .Add rules for http requests
 image::./img/2024-01-08T14-23-47-369Z.png[] 
@@ -143,7 +141,7 @@ image::./img/2024-01-08T16-56-20-140Z.png[]
 .Verify routing (Instance 2)
 image::./img/2024-01-08T16-56-41-046Z.png[] 
 
-.Fallback (Different page from instance 1)
+.Fallback (Root index.html from instance 1)
 image::./img/2024-01-08T16-57-15-519Z.png[] 
 
 <<<
