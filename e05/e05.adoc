@@ -1,0 +1,189 @@
+= Lab 5 NoSQL
+:author: Andreas Wenzelhuemer
+:email: <s2210455024@fhooe.at>
+:reproducible:
+:experimental:
+:listing-caption: Listing
+:source-highlighter: rouge
+:toc:
+:numbered:
+:toclevels: 5
+:rouge-style: github
+
+<<<
+
+== MongoDB
+
+=== Setup
+
+Install MongoDB Community Server:
+
+.Install Community Server
+image::img/2024-01-22-09-37-18.png[]
+
+.Installation
+image::img/2024-01-22-09-39-21.png[]
+
+Install Database Tools with winget:
+
+`winget install -e --id MongoDB.DatabaseTools`
+
+Start database with following command from "C:\Program Files\MongoDB\Server\7.0\bin":
+
+`.\mongod.exe`
+
+After starting the database we connect via MongoDb Compass:
+
+.Starting the Database
+image::img/2024-01-22-09-57-21.png[]
+
+.Connected Database
+image::img/2024-01-22-09-52-06.png[]
+
+.Default connection settings for localhost
+image::img/2024-01-22-09-52-59.png[]
+
+Stopping the server is possible with:
+
+`net stop MongoDB`
+
+.Stopping the Database
+image::img/2024-01-22-09-55-57.png[]
+
+=== Import Data
+
+Create new database and collection
+
+.Database
+image::img/2024-01-23-11-14-55.png[]
+
+Create missing collections and add corresponding data from "dataset.zip".
+
+.Imported data
+image::img/2024-01-23-11-16-32.png[]
+
+=== Query Data
+
+Connect via `mongosh`.
+Switch database with `use lab5`.
+
+==== Select all Austrian cities (countryID = 15)!
+
+.All Austrian cities
+image::img/2024-01-23-11-25-59.png[]
+
+==== Select all Austrian cities in ascending order!
+
+.Ascending
+image::img/2024-01-23-11-27-47.png[]
+
+==== Select all Austrian cities in descending order!
+
+.Descending
+image::img/2024-01-23-11-28-33.png[]
+
+==== Select the number of Austrian cities that are included in the dataset!
+
+.Count
+image::img/2024-01-23-11-29-02.png[]
+
+==== Select solely the city names of all Austrian cities!
+
+.City names
+image::img/2024-01-23-11-29-49.png[]
+
+==== Select all countries, which exhibit a population between 15 and 20 millions of people!
+
+.Population
+image::img/2024-01-23-11-31-27.png[]
+
+<<<
+=== Update Data
+
+==== Increase the population of Austria (countryID = 15) by 3 persons.
+
+.Increased population
+image::img/2024-01-23-11-33-17.png[]
+
+==== Decrease the population of Austria by 3 persons.
+
+.Decreased population
+image::img/2024-01-23-11-34-51.png[]
+
+<<<
+== Azure Cosmos DB
+
+=== Setup Cosmos DB
+
+Select Azure Cosmos DB for MongoDB.
+
+.Select database
+image::img/2024-01-23-11-36-27.png[]
+
+.Azure Cosmos DB Configuration
+image::img/2024-01-23-11-43-40.png[]
+
+.Created Azure Cosmos DB
+image::img/2024-01-23-12-01-57.png[]
+
+=== Migrate Data
+
+==== Export Data from MongoDB
+
+.Dump
+image::img/2024-01-23-12-00-48.png[]
+
+==== Upload all the files to a Storage Account
+
+Create storage account and upload dump.
+Change access and find storage url.
+
+.Create Storage account
+image::img/2024-01-23-12-28-28.png[]
+
+.Add blob storage container
+image::img/2024-01-23-12-31-12.png[]
+
+.Upload dump
+image::img/2024-01-23-13-50-54.png[]
+
+.Enable public access
+image::img/2024-01-23-14-29-38.png[]
+
+.Find storage url
+image::img/2024-01-23-12-40-55.png[]
+
+==== Azure Database Migration Service (offline)
+
+Create migration service, add a new project and upload the dump from the storage account.
+
+.Create Azure Database Migration Service
+image::img/2024-01-23-12-06-34.png[]
+
+.Create Azure Database Migration Project
+image::img/2024-01-23-12-37-46.png[]
+
+.Offline Migration
+image::img/2024-01-23-12-41-31.png[]
+
+.Database Selection
+image::img/2024-01-23-13-51-43.png[]
+
+.Running Migration
+image::img/2024-01-23-14-00-24.png[]
+
+.Imported Data
+image::img/2024-01-23-14-01-46.png[]
+
+==== Query/Update Data
+
+.Query for all Austrian cities
+image::img/2024-01-23-14-06-37.png[]
+
+.List cities
+image::img/2024-01-23-14-07-58.png[]
+
+Executing a couple times
+
+.Update population
+image::img/2024-01-23-14-19-38.png[]
